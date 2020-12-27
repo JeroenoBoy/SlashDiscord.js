@@ -1,0 +1,5 @@
+{
+	"name": "Sharding",
+	"description": "The sharding example of this package.",
+	"file": "shardingExample/index.ts"
+}
