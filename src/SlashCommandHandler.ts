@@ -241,8 +241,6 @@ export class SlashCommandHandler {
 				const channel = this.bot.channels.resolve(d.channel_id)
 					|| await this.bot.channels.fetch(d.guild_id);
 
-				if(!(channel instanceof TextChannel)) throw new Error('Channel is not a TextChannel');
-
 				//	Checking twice
 
 				if(!guild) throw new Error('Guild couldn\'t be resolved in INTERACTION_CREATE');

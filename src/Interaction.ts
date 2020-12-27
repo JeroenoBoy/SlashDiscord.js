@@ -1,4 +1,4 @@
-import { Client, EmbedField, Guild, GuildMember, TextChannel } from "discord.js";
+import { Client, EmbedField, Guild, GuildMember, Channel } from "discord.js";
 import { SlashCommandHandler } from ".";
 
 export type InteractionFunction = (interaction: Interaction) => void | Promise<void>;
@@ -11,7 +11,7 @@ export class Interaction implements IInteraction {
 	version: number;
 	
 	guild: Guild;
-	channel: TextChannel;
+	channel: Channel;
 	member: GuildMember;
 	
 
@@ -23,7 +23,7 @@ export class Interaction implements IInteraction {
 	reply_send: boolean = false;
 
 
-	constructor(client: Client, handler: SlashCommandHandler, guild: Guild, channel: TextChannel, d: any) {
+	constructor(client: Client, handler: SlashCommandHandler, guild: Guild, channel: Channel, d: any) {
 		this.id = d.id;
 		this.version = d.version;
 		this.type = d.type;
@@ -70,7 +70,7 @@ export interface IInteraction {
 	type: InteractionType
 	data: ApplicationCommandInteractionData
 	guild: Guild
-	channel: TextChannel
+	channel: Channel
 	member: GuildMember
 	version: Readonly<number>
 }
