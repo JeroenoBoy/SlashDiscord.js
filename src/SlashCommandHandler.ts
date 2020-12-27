@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import { Client, TextChannel } from "discord.js";
 import fetch from 'node-fetch';
 import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse } from ".";
 import InteractionResponseTable from './tables/InteractionResponseType';
@@ -240,6 +240,8 @@ export class SlashCommandHandler {
 					|| await this.bot.guilds.fetch(d.guild_id);
 				const channel = this.bot.channels.resolve(d.channel_id)
 					|| await this.bot.channels.fetch(d.guild_id);
+
+				if(!(channel instanceof TextChannel)) throw new Error('Channel is not a TextChannel');
 
 				//	Checking twice
 
