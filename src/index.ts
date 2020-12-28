@@ -9,8 +9,8 @@ export {
 	SlashCommand,
 	ApplicationCommand,
 	ApplicationCommandOption,
-	ApplicationCommandOptionChoice,
-	ApplicationCommandOptionType
+	ApplicationCommandChoice,
+	ApplicationCommandType
 } from './SlashCommand';
 
 
@@ -21,9 +21,9 @@ export {
 	IInteraction,
 	InteractionType,
 	InteractionData,
-	InteractionDataOption,
+	InteractionOption,
 
 	InteractionResponse,
 	InteractionResponseType,
-	InteractionApplicationCommandCallbackData
+	InteractionCallbackData
 } from './Interaction';

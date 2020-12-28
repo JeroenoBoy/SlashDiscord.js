@@ -1,6 +1,6 @@
 import { Client, TextChannel } from "discord.js";
 import fetch from 'node-fetch';
-import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse, InteractionDataOption } from ".";
+import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse, InteractionOption } from ".";
 import InteractionResponseTable from './tables/InteractionResponseType';
 
 
@@ -9,21 +9,78 @@ const apiURL = 'https://discord.com/api/v8';
 
 
 export interface SlashCommandOptions {
+
+	/**
+	 * The Discord.Client or an id and token.
+	 */
 	client: Client | ClientLike
+
+	/**
+	 * If enabled, commands will get patched / deleted / created
+	 * @default true
+	 */
 	registerCommands?: boolean
+
+	/**
+	 * If enabled, command will be run. disable when on the ShardingManager.
+	 * @default true
+	 */
 	runCommands?: boolean
+
+	/**
+	 * If enabled, commands that no longer exist will get deleted.
+	 * @default true
+	 */
 	deleteUnregisteredCommands?: boolean
+
+	/**
+	 * If the ran command hasn't executed any interaction callback, execute a PONG with source.
+	 * @default true
+	 */
 	sendPongIfNoResponse?: boolean
+
+	/**
+	 * If enabled, this will automatically parse the options of an interaction.
+	 * @warning Must use with a Discord.Client
+	 * @default true
+	 * 
+	 * @example when the flag is user, it will return a User object, if not it will return the user ID.
+	 */
+	parseInteractionOptions?: boolean;
 	
+	/**
+	 * If enabled, the debug messages will be displayed.
+	 * @default false
+	 */
 	debug?: boolean
+
+	/**
+	 * The prefix of the debug messages.
+	 * @default [SDJS]
+	 */
 	debugPrefix?: string
 
+	/**
+	 * If enabled, when a command gets executed that isn't recognized it will return a message.
+	 * @default true
+	 */
 	sendNoLongerAvailable?: boolean
+	
+	/**
+	 * The message which should be displayed if sendNoLongerAvailable is true.
+	 * @default This command is no longer available.
+	 */
 	noLongerAvailableMessage?: string
 }
 
 export interface ClientLike {
+	/**
+	 * The token of the client, used for authorization.
+	 */
 	token: string,
+	/**
+	 * Id of the client
+	 */
 	id: string
 }
 
@@ -32,8 +89,17 @@ export class SlashCommandHandler {
 
 
 	private useMethod: 'bot' | 'clientLike';
-	bot?: Client;
+	/**
+	 * The client this handler uses.
+	 */
+	client?: Client;
+	/**
+	 * This contains the client token & id, used for making API requests.
+	 */
 	clientLike?: ClientLike
+	/**
+	 * The id of the client | clientlike.
+	 */
 	clientID: string;
 	
 	//	Request stuff
@@ -44,15 +110,54 @@ export class SlashCommandHandler {
 	private commandData: Map<SlashCommand['id'], SlashCommand> = new Map();
 	
 	//	Options
+	
+	/**
+	 * If enabled, commands will get patched / deleted / created
+	 * @default true
+	 */
 	registerCommands: boolean;
+	/**
+	 * If enabled, command will be run. disable when on the ShardingManager.
+	 * @default true
+	 */
 	runCommands: boolean;
+	/**
+	 * If enabled, commands that no longer exist will get deleted.
+	 * @default true
+	 */
 	deleteUnregisteredCommands: boolean;
+	/**
+	 * If the ran command hasn't executed any interaction callback, execute a PONG with source.
+	 * @default true
+	 */
 	sendPongIfNoResponse: boolean;
-
+	/**
+	 * If enabled, this will automatically parse the options of an interaction.
+	 * @warning Must use with a Discord.Client
+	 * @default true
+	 * 
+	 * @example when the flag is user, it will return a User object, if not it will return the user ID.
+	 */
+	parseInteractionOptions: boolean;
+	/**
+	 * If enabled, the debug messages will be displayed.
+	 * @default false
+	 */
 	debug: boolean;
+	/**
+	 * The prefix of the debug messages.
+	 * @default [SDJS]
+	 */
 	debugPrefix: string;
-
+	/**
+	 * If enabled, when a command gets executed that isn't recognized it will return a message.
+	 * @default true
+	 */
 	sendNoLongerAvailable: boolean
+	/**
+	 * The message which should be displayed if sendNoLongerAvailable is true.
+	 * @default This command is no longer available.
+	 */
 	noLongerAvailableMessage: string
 	
 	/**
@@ -71,6 +176,7 @@ export class SlashCommandHandler {
 		this.sendPongIfNoResponse = options.sendPongIfNoResponse ?? true;
 		this.deleteUnregisteredCommands = options.deleteUnregisteredCommands ?? true;
 
+		this.parseInteractionOptions = options.parseInteractionOptions ?? true;
 		
 		this.debug = options.debug ?? false;
 		this.debugPrefix = options.debugPrefix ?? '[SDJS]';
@@ -82,18 +188,18 @@ export class SlashCommandHandler {
 
 		if(isClient(options.client)) {
 			this.useMethod = 'bot';
-			this.bot = options.client;
+			this.client = options.client;
 			
 			//	Listening for the ready event on the bot
 			
-			this.bot.once('ready', async () => {
-				if(!this.bot) return;
-				this.clientID = this.bot.user!.id;
+			this.client.once('ready', async () => {
+				if(!this.client) return;
+				this.clientID = this.client.user!.id;
 				
 				//	Setting URL and headers
 				
-				this.baseURL = this.baseURL + '/' + this.bot.user!.id;
-				this.headers = { 'Authorization': 'Bot ' + this.bot.token};
+				this.baseURL = this.baseURL + '/' + this.client.user!.id;
+				this.headers = { 'Authorization': 'Bot ' + this.client.token};
 
 				//	Registering commands
 
@@ -154,8 +260,6 @@ export class SlashCommandHandler {
 			const command = commands[i];
 			const registeredCommand = this.commandData.get(command.name);
 			
-			foundCommands.push(command.name);
-			
 			//	Deleting command
 			
 			if(!registeredCommand) {
@@ -186,9 +290,10 @@ export class SlashCommandHandler {
 
 			//	Checking for updates
 
-			if(((JSON.stringify(registeredCommand.parsedOptions()) != command.options ? JSON.stringify(command.options) : undefined)
-			|| registeredCommand.description != command.description)
-			&& this.registerCommands
+			if(!this.registerCommands) continue;
+
+			if((JSON.stringify(registeredCommand.parsedOptions()) != (command.options ? JSON.stringify(command.options) : undefined))
+			|| registeredCommand.description != command.description
 			) {
 
 				this.log('Patching command', command.name);
@@ -237,31 +342,29 @@ export class SlashCommandHandler {
 		
 		if(this.useMethod === 'bot'
 		&& this.runCommands) {
-			if(!this.bot) return;
+			if(!this.client) return;
 
-			this.bot.on('raw', async ({d, t}) => {
+			this.client.on('raw', async ({d, t}) => {
 				if(t !== 'INTERACTION_CREATE') return;
-				if(!this.bot) return;
+				if(!this.client) return;
 
 				this.log('Recieved interaction event');
 	
 				//	Retrieving guild and channel
 
-				const guild = this.bot.guilds.cache.get(d.guild_id)
-					|| await this.bot.guilds.fetch(d.guild_id);
-				const channel = this.bot.channels.cache.get(d.channel_id)
-					|| await this.bot.channels.fetch(d.channel_id);
+				const channel = this.client.channels.cache.get(d.channel_id)
+					|| await this.client.channels.fetch(d.channel_id);
 
-				if(!(channel instanceof TextChannel)) throw new Error('Channel isn\'t a TextChannel');
-
+					
 				//	Checking twice
 
-				if(!guild) throw new Error('Guild couldn\'t be resolved in INTERACTION_CREATE');
+					
+				if(!(channel instanceof TextChannel)) throw new Error('Channel isn\'t a TextChannel');
 				if(!channel) throw new Error('Channel couldn\'t be resolved in INTERACTION_CREATE');
 
 				//	Making interaction
 
-				const interaction = new Interaction(this.bot, this, guild, channel, d);
+				const interaction = new Interaction(this.client, this, channel, d);
 
 				//	Getting commands
 
@@ -273,29 +376,43 @@ export class SlashCommandHandler {
 					return this.log(`Command ${interaction.data.name} executed but this command isn't defined.`);
 				}
 
+				//	Parsing options
+
+				if(this.parseInteractionOptions
+				&& this.useMethod === 'bot')
+					await interaction.parseOptions(command);
+
 				//	Getting supcommand path
 
-				const subCommand: string[] = [];
-				let currentOption: InteractionDataOption | undefined = interaction.data.options![0];
-				while(currentOption) {
-					subCommand.push(currentOption.name)
-
-					if(currentOption.options)
-						currentOption = currentOption.options![0]
-					else
-						currentOption = undefined;
-				}
-
-				//	Checking if the subcommand path exists, and if it does run it
-
 				let done = false;
-				while(!done && subCommand.length > 0) {
-					if(command.subFunctions.has(subCommand.join(' '))) {
-						command.subFunctions.get(subCommand.join(' '))!(interaction);
-						done = true;
+
+				if(interaction.data.options
+				&& command.subFunctions.size > 0) {
+
+					const subCommand: string[] = [];
+					let currentOption: InteractionOption | undefined = interaction.data.options![0];
+					
+					while(currentOption) {
+						subCommand.push(currentOption.name)
+	
+						if(currentOption.options)
+							currentOption = currentOption.options![0]
+						else
+							currentOption = undefined;
 					}
-					subCommand.pop();
+	
+					//	Checking if the subcommand path exists, and if it does run it
+	
+					while(!done && subCommand.length > 0) {
+						if(command.subFunctions.has(subCommand.join(' '))) {
+							command.subFunctions.get(subCommand.join(' '))!(interaction);
+							done = true;
+						}
+						subCommand.pop();
+					}
 				}
+
+				//	normal reply
 				
 				if(!done)
 					await command.runFunction(interaction);
@@ -311,7 +428,11 @@ export class SlashCommandHandler {
 	}
 
 
-
+	/**
+	 * Respond to an interaction.
+	 * @param tokenID The application and tokenID of the interaction
+	 * @param response The response this interaction should get
+	 */
 	async respond(tokenID: string, response: InteractionResponse) {
 
 		const res = {
@@ -329,8 +450,12 @@ export class SlashCommandHandler {
 	}
 
 
-
-	log(msg: string, ...optionalParams: any[]) {
+	/**
+	 * This is like console.log, except only gets logged when 
+	 * @param msg first object
+	 * @param optionalParams additional objects
+	 */
+	log(msg: any, ...optionalParams: any[]) {
 		if(this.debug)
 			console.log(this.debugPrefix + ' ' + msg, ...optionalParams);
 	}

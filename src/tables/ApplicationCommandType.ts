@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType } from "..";
+import { ApplicationCommandType } from "..";
 
 const table = new Map<number, string>();
 table.set(1, 'SUB_COMMAND');
@@ -18,11 +18,11 @@ for(const [ key, value ] of table)
 
 export default class ApplicationCommandOptionTable {
 
-	static to(type: ApplicationCommandOptionType): number {
+	static to(type: ApplicationCommandType): number {
 		return reverseTable.get(type)!;
 	} 
 
-	static from(type: number): ApplicationCommandOptionType {
+	static from(type: number): ApplicationCommandType {
 		// @ts-ignore
 		return table.get(type)!;
 	}

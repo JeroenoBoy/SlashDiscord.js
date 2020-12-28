@@ -1,36 +1,61 @@
 import { Client, EmbedField, Guild, GuildMember, TextChannel } from "discord.js";
-import { SlashCommandHandler } from ".";
+import { SlashCommandHandler, SlashCommand } from ".";
+import { ApplicationCommandOption } from "./SlashCommand";
 
 export type InteractionFunction = (interaction: Interaction) => any | Promise<any>;
 
 export class Interaction implements IInteraction {
-	id: string;
-	type: InteractionType;
-	data: InteractionData;
-	version: number;
-	
-	guild: Guild;
-	channel: TextChannel;
-	member: GuildMember;
-	
 
-	//	Additional data
+	/**
+	 * ID of this interaction
+	 */
+	id: string;
+	/**
+	 * The type of interaction.
+	 */
+	type: InteractionType;
+	/**
+	 * The data used by this interaction.
+	 */
+	data: InteractionData;
+	/**
+	 * The guild this command has been executed in.
+	 */
+	guild: Guild;
+	/**
+	 * The channel this command has been executed in.
+	 */
+	channel: TextChannel;
+	/**
+	 * The member that executed this command.
+	 */
+	member: GuildMember;
+	/**
+	 * The client this interaction uses.
+	 */
 	client: Client;
+	/**
+	 * The command handler this interaction uses.
+	 */
 	handler: SlashCommandHandler;
 
 	private token: string
+
+	/**
+	 * Used to check if a reply has already been send.
+	 * There can only be a maximum of 1 reply each interaction.
+	 */
 	reply_send: boolean = false;
 
 
-	constructor(client: Client, handler: SlashCommandHandler, guild: Guild, channel: TextChannel, d: any) {
+	constructor(client: Client, handler: SlashCommandHandler, channel: TextChannel, d: any) {
 		this.id = d.id;
-		this.version = d.version;
 		this.type = d.type;
 		this.data = d.data;
 
-		this.guild = guild;
+		this.guild = channel.guild;
 		this.channel = channel;
-		this.member = new GuildMember(client, d.member, guild);
+		this.member = new GuildMember(client, d.member, this.guild);
 
 		this.client = client;
 		this.handler = handler;
@@ -40,10 +65,10 @@ export class Interaction implements IInteraction {
 
 
 	/**
-	 * get a selected option.
+	 * Get a selected option.
 	 * @param option the option, example: 'moderation mute user'
 	 */
-	getOption<T = any>(option: string): InteractionDataOption<T> | undefined {
+	getOption<T = any>(option: string): InteractionOption<T> | undefined {
 		const optionSplitted = option.split(' ');
 		
 		let options = this.data.options;
@@ -62,7 +87,54 @@ export class Interaction implements IInteraction {
 
 
 	/**
-	 * Close the interaction callback
+	 * Parse the options.
+	 * @param command command this interaction uses.
+	 */
+	async parseOptions(command: SlashCommand) {
+		const cmdOptions = command.options;
+		const options = this.data.options;
+
+		if(!cmdOptions) return;
+		if(!options) return;
+		
+		await this._parseOptions(options, cmdOptions)
+	}
+
+
+	private async _parseOptions(options: InteractionOption[], commandOptions: ApplicationCommandOption[]) {
+
+		for(const option of options) {
+			const cmdOption = commandOptions.find(o=>o.name === option.name)
+			if(!cmdOption) continue;
+
+			// Parsing options
+
+			console.log(cmdOption.type);
+
+			switch(cmdOption.type) {
+				case 'CHANNEL':
+					option.value = this.client.channels.cache.get(option.value)
+						||	await this.client.channels.fetch(option.value)
+					break;
+				case 'ROLE':
+					option.value = this.guild.roles.cache.get(option.value)
+						||	await this.guild.roles.fetch(option.value)
+					break;
+				case 'USER':
+					option.value = this.client.users.cache.get(option.value)
+						||	await this.client.users.fetch(option.value)
+					break;
+			}
+
+			//	Parsing embedded options
+
+			if(option.options && cmdOption.options) this._parseOptions(option.options, cmdOption.options);
+		}
+
+	}
+
+	/**
+	 * Close the interaction callback.
 	 * @param showSource to show the command message or not
 	 */
 	async pong(showSource: boolean = true) {
@@ -76,7 +148,7 @@ export class Interaction implements IInteraction {
 
 
 	/**
-	 * Send a message back to the user, this is excluding source
+	 * Send a message back to the user, this is excluding source.
 	 * @param msg the message to send
 	 */
 	async send(msg: string) {
@@ -93,7 +165,7 @@ export class Interaction implements IInteraction {
 
 
 	/**
-	 * Reply to a interaction, this is including source
+	 * Reply to a interaction, this is including source.
 	 * @param msg the message to send
 	 */
 	async reply(msg: string) {
@@ -111,28 +183,63 @@ export class Interaction implements IInteraction {
 
 
 export interface IInteraction {
+	/**
+	 * ID of this interaction.
+	 */
 	id: string
+	/**
+	 * The type of interaction.
+	 */
 	type: InteractionType
+	/**
+	 * The data used by this interaction.
+	 */
 	data: InteractionData
+	/**
+	 * The guild this command has been executed in.
+	 */
 	guild: Guild
+	/**
+	 * The channel this command has been executed in.
+	 */
 	channel: TextChannel
+	/**
+	 * The command handler this interaction uses.
+	 */
 	member: GuildMember
-	version: Readonly<number>
 }
 
 
 export type InteractionType = 'Ping' | 'ApplicationCommand'
 
 export interface InteractionData {
+	/**
+	 * ID of the ApplicationCommand of this interaction.
+	 */
 	id: string
+	/**
+	 * Name of the ApplicationCommand of this interaction.
+	 */
 	name: string
-	options?: InteractionDataOption[]
+	/**
+	 * The options of this interaction.
+	 */
+	options?: InteractionOption[]
 }
 
-export interface InteractionDataOption<T = any> {
+export interface InteractionOption<T = any> {
+	/**
+	 * The name of this option.
+	 */
 	name: string
+	/**
+	 * The value of this option.
+	 */
 	value?: T
-	options?: InteractionDataOption[]
+	/**
+	 * The child options of this option.
+	 */
+	options?: InteractionOption[]
 }
 
 
@@ -143,7 +250,7 @@ export interface InteractionDataOption<T = any> {
 
 export interface InteractionResponse {
 	type: InteractionResponseType,
-	data?: InteractionApplicationCommandCallbackData
+	data?: InteractionCallbackData
 }
 
 
@@ -156,7 +263,7 @@ export type InteractionResponseType =
 ;
 
 
-export interface InteractionApplicationCommandCallbackData {
+export interface InteractionCallbackData {
 	tts?: boolean
 	content: string
 	embeds?: EmbedField[]

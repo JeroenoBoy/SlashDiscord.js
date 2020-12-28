@@ -1,0 +1,5 @@
+{
+	"name": "Options",
+	"description": "Testing 0.1.4 options parser.",
+	"file": "options/index.ts"
+}

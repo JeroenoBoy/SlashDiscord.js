@@ -10,7 +10,7 @@ const client = new Client();
 
 const handler = new SlashCommandHandler({
 	client,
-	debug: true
+	debug: true,
 })
 
 //	Creating the commands, please note that this can take up to 1 hour to update
