@@ -1,5 +1,5 @@
 # SlashDiscord.js
- An advanced slash command handler for discord
+ An advanced slash command handler for discord  return
  Docs: [WIP](https://app.gitbook.com/@jeroenoboy/s/slashdiscord-js/)
 
 
