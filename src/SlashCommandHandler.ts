@@ -1,6 +1,6 @@
 import { Client, TextChannel } from "discord.js";
 import fetch from 'node-fetch';
-import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse } from ".";
+import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse, InteractionDataOption } from ".";
 import InteractionResponseTable from './tables/InteractionResponseType';
 
 
@@ -14,8 +14,12 @@ export interface SlashCommandOptions {
 	runCommands?: boolean
 	deleteUnregisteredCommands?: boolean
 	sendPongIfNoResponse?: boolean
+	
 	debug?: boolean
 	debugPrefix?: string
+
+	sendNoLongerAvailable?: boolean
+	noLongerAvailableMessage?: string
 }
 
 export interface ClientLike {
@@ -44,9 +48,12 @@ export class SlashCommandHandler {
 	runCommands: boolean;
 	deleteUnregisteredCommands: boolean;
 	sendPongIfNoResponse: boolean;
-	
+
 	debug: boolean;
 	debugPrefix: string;
+
+	sendNoLongerAvailable: boolean
+	noLongerAvailableMessage: string
 	
 	/**
 	 * Create a new SlashCommandHandler instance
@@ -64,8 +71,12 @@ export class SlashCommandHandler {
 		this.sendPongIfNoResponse = options.sendPongIfNoResponse ?? true;
 		this.deleteUnregisteredCommands = options.deleteUnregisteredCommands ?? true;
 
+		
 		this.debug = options.debug ?? false;
 		this.debugPrefix = options.debugPrefix ?? '[SDJS]';
+
+		this.sendNoLongerAvailable = options.sendNoLongerAvailable ?? true;
+		this.noLongerAvailableMessage = options.noLongerAvailableMessage ?? 'This command is no longer available.';
 
 		//	Checking if client
 
@@ -175,7 +186,7 @@ export class SlashCommandHandler {
 
 			//	Checking for updates
 
-			if((registeredCommand.parsedOptions().toString() != command.options ? undefined : command.options.toString()
+			if(((JSON.stringify(registeredCommand.parsedOptions()) != command.options ? JSON.stringify(command.options) : undefined)
 			|| registeredCommand.description != command.description)
 			&& this.registerCommands
 			) {
@@ -236,10 +247,12 @@ export class SlashCommandHandler {
 	
 				//	Retrieving guild and channel
 
-				const guild = this.bot.guilds.resolve(d.guild_id)
+				const guild = this.bot.guilds.cache.get(d.guild_id)
 					|| await this.bot.guilds.fetch(d.guild_id);
-				const channel = this.bot.channels.resolve(d.channel_id)
-					|| await this.bot.channels.fetch(d.guild_id);
+				const channel = this.bot.channels.cache.get(d.channel_id)
+					|| await this.bot.channels.fetch(d.channel_id);
+
+				if(!(channel instanceof TextChannel)) throw new Error('Channel isn\'t a TextChannel');
 
 				//	Checking twice
 
@@ -253,11 +266,39 @@ export class SlashCommandHandler {
 				//	Getting commands
 
 				const command = this.commandData.get(interaction.data.name);
-				if(!command) return this.log(`Command ${interaction.data.name} executed but this command isn't defined.`)
+				if(!command) {
+					if(this.sendNoLongerAvailable)
+						interaction.reply(this.noLongerAvailableMessage);
 
-				//	Execute interaction
+					return this.log(`Command ${interaction.data.name} executed but this command isn't defined.`);
+				}
 
-				await command.execute(interaction);
+				//	Getting supcommand path
+
+				const subCommand: string[] = [];
+				let currentOption: InteractionDataOption | undefined = interaction.data.options![0];
+				while(currentOption) {
+					subCommand.push(currentOption.name)
+
+					if(currentOption.options)
+						currentOption = currentOption.options![0]
+					else
+						currentOption = undefined;
+				}
+
+				//	Checking if the subcommand path exists, and if it does run it
+
+				let done = false;
+				while(!done && subCommand.length > 0) {
+					if(command.subFunctions.has(subCommand.join(' '))) {
+						command.subFunctions.get(subCommand.join(' '))!(interaction);
+						done = true;
+					}
+					subCommand.pop();
+				}
+				
+				if(!done)
+					await command.runFunction(interaction);
 
 				//	Checking if response was send
 

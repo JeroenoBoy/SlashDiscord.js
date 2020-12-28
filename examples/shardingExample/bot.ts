@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { Client } from 'discord.js';
 import { SlashCommandHandler } from '../../src';
 
@@ -26,7 +27,7 @@ handler.addCommand({
 
 
 client.once('ready', () => {
-	console.log('Logged in as', client.user!.tag)
+	console.log('Logged in as', chalk.green(client.user!.tag))
 })
 
 client.login();

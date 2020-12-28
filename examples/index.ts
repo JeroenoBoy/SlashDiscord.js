@@ -7,14 +7,18 @@ import { Spinner } from 'clui';
 import inquirer from 'inquirer';
 
 
+
+
 (async () => {
 
 	//
 	//	Pretty stuff
 	//
-	
+
 	console.log(chalk.green(figlet.textSync('SlashDiscord.js')));
 	console.log('A better way for SlashCommands\n\n');
+
+	console.log('SlashCommands can take up to 2 hours to update.\nYou can kick and re-invite the bot to make testing easier.\n\n');
 	
 	const spinner = new Spinner('Loading available examples....');
 	spinner.start();

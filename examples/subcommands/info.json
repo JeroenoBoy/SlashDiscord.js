@@ -1,0 +1,5 @@
+{
+	"name": "Subcommands",
+	"description": "The testing of subcommands.",
+	"file": "subcommands/index.ts"
+}

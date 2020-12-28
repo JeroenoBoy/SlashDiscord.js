@@ -1,4 +1,4 @@
-import { InteractionFunction, Interaction, SlashCommandHandler } from "."
+import { InteractionFunction, SlashCommandHandler } from "."
 import ApplicationCommandOptionTable from "./tables/ApplicationCommandOptionType"
 
 export class SlashCommand implements ApplicationCommand {
@@ -11,7 +11,8 @@ export class SlashCommand implements ApplicationCommand {
 
 	handler: SlashCommandHandler
 
-	runFunction: InteractionFunction = () => {};
+	runFunction: InteractionFunction = () => {}
+	subFunctions: Map<string, InteractionFunction> = new Map<string, InteractionFunction>()
 
 	constructor(command: ApplicationCommand, handler: SlashCommandHandler) {
 		this.id = command.id;
@@ -23,12 +24,15 @@ export class SlashCommand implements ApplicationCommand {
 		this.handler = handler;
 	}
 
-	async execute(interaction: Interaction) {
-		await this.runFunction(interaction);
+	run(callback: InteractionFunction): SlashCommand {
+		this.runFunction = callback;
+		return this;
 	}
 
-	run(callback: InteractionFunction) {
-		this.runFunction = callback;
+
+	runSub(subcommand: string, callback: InteractionFunction): SlashCommand {
+		this.subFunctions.set(subcommand, callback);
+		return this;
 	}
 
 

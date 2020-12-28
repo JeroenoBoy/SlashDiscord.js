@@ -20,8 +20,8 @@ export {
 	
 	IInteraction,
 	InteractionType,
-	ApplicationCommandInteractionData,
-	ApplicationCommandInteractionDataOption,
+	InteractionData,
+	InteractionDataOption,
 
 	InteractionResponse,
 	InteractionResponseType,

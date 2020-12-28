@@ -1,17 +1,16 @@
-import { Client, EmbedField, Guild, GuildMember, Channel } from "discord.js";
+import { Client, EmbedField, Guild, GuildMember, TextChannel } from "discord.js";
 import { SlashCommandHandler } from ".";
 
-export type InteractionFunction = (interaction: Interaction) => void | Promise<void>;
-
+export type InteractionFunction = (interaction: Interaction) => any | Promise<any>;
 
 export class Interaction implements IInteraction {
 	id: string;
 	type: InteractionType;
-	data: ApplicationCommandInteractionData;
+	data: InteractionData;
 	version: number;
 	
 	guild: Guild;
-	channel: Channel;
+	channel: TextChannel;
 	member: GuildMember;
 	
 
@@ -23,7 +22,7 @@ export class Interaction implements IInteraction {
 	reply_send: boolean = false;
 
 
-	constructor(client: Client, handler: SlashCommandHandler, guild: Guild, channel: Channel, d: any) {
+	constructor(client: Client, handler: SlashCommandHandler, guild: Guild, channel: TextChannel, d: any) {
 		this.id = d.id;
 		this.version = d.version;
 		this.type = d.type;
@@ -40,18 +39,65 @@ export class Interaction implements IInteraction {
 	}
 
 
-	async pong() {
-		if(this.reply_send) throw new Error('A Response has already been send');
+	/**
+	 * get a selected option.
+	 * @param option the option, example: 'moderation mute user'
+	 */
+	getOption<T = any>(option: string): InteractionDataOption<T> | undefined {
+		const optionSplitted = option.split(' ');
+		
+		let options = this.data.options;
+		while(options != undefined) {
+			const option = options.find(o=>o.name === optionSplitted[0]);
+
+			if(!option)
+				return undefined;
+			if(optionSplitted.length <= 1)
+				return option;
+
+			optionSplitted.shift();
+			options = option.options;
+		}
+	}
+
+
+	/**
+	 * Close the interaction callback
+	 * @param showSource to show the command message or not
+	 */
+	async pong(showSource: boolean = true) {
+		if(this.reply_send) throw new Error('Can only execute the callback once.');
 		this.reply_send = true;
 
 		await this.handler.respond(this.id + '/' + this.token, {
-			type: 'AcknowledgeWithSource'
+			type: showSource ? 'AcknowledgeWithSource' : 'Acknowledge'
 		});
 	}
 
 
+	/**
+	 * Send a message back to the user, this is excluding source
+	 * @param msg the message to send
+	 */
+	async send(msg: string) {
+		if(this.reply_send) throw new Error('Can only execute the callback once.');
+		this.reply_send = true;
+
+		await this.handler.respond(this.id + '/' + this.token, {
+			type: 'ChannelMessage',
+			data: {
+				content: msg
+			}
+		});	
+	}
+
+
+	/**
+	 * Reply to a interaction, this is including source
+	 * @param msg the message to send
+	 */
 	async reply(msg: string) {
-		if(this.reply_send) throw new Error('A Response has already been send');
+		if(this.reply_send) throw new Error('Can only execute the callback once.');
 		this.reply_send = true;
 
 		await this.handler.respond(this.id + '/' + this.token, {
@@ -61,16 +107,15 @@ export class Interaction implements IInteraction {
 			}
 		});	
 	}
-
 }
 
 
 export interface IInteraction {
 	id: string
 	type: InteractionType
-	data: ApplicationCommandInteractionData
+	data: InteractionData
 	guild: Guild
-	channel: Channel
+	channel: TextChannel
 	member: GuildMember
 	version: Readonly<number>
 }
@@ -78,16 +123,16 @@ export interface IInteraction {
 
 export type InteractionType = 'Ping' | 'ApplicationCommand'
 
-export interface ApplicationCommandInteractionData {
+export interface InteractionData {
 	id: string
 	name: string
-	options?: ApplicationCommandInteractionDataOption[]
+	options?: InteractionDataOption[]
 }
 
-export interface ApplicationCommandInteractionDataOption {
+export interface InteractionDataOption<T = any> {
 	name: string
-	value?: any
-	options?: ApplicationCommandInteractionDataOption[]
+	value?: T
+	options?: InteractionDataOption[]
 }
 
 
