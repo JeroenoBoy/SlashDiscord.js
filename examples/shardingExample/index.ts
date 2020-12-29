@@ -26,8 +26,8 @@ import { SlashCommandHandler } from "../../src";
 
 
 	handler.addCommand({
-		name: 'Hello',
-		description: 'Send a Hello World command to the bot.'
+		name: 'shard',
+		description: 'Get the shard this bot is running from.'
 	});
 
 

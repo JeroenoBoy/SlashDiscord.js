@@ -18,16 +18,16 @@ const handler = new SlashCommandHandler({
 //	Creating the commands, please note that this can take up to 1 hour to update
 
 handler.addCommand({
-	name: 'Hello',
-	description: 'Send a Hello World command to the bot.'
+	name: 'shard',
+	description: 'Get the shard this bot is running from.'
 })
 .run(interaction => {
-	interaction.reply('Hello World!');
+	interaction.reply(`This guild is using shard #${client.shard.ids[0]}`);
 });
 
 
 client.once('ready', () => {
-	console.log('Logged in as', chalk.green(client.user!.tag))
+	console.log(`[${client.shard.ids[0]}] Logged in as ${chalk.green(client.user!.tag)}`)
 })
 
 client.login();

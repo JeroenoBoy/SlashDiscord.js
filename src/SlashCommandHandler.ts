@@ -430,10 +430,11 @@ export class SlashCommandHandler {
 
 	/**
 	 * Respond to an interaction.
-	 * @param tokenID The application and tokenID of the interaction
-	 * @param response The response this interaction should get
+	 * @param interactionID The ID of the interaction.
+	 * @param tokenID The token of the interaction.
+	 * @param response The response this interaction should get.
 	 */
-	async respond(tokenID: string, response: InteractionResponse) {
+	async respond(interactionID: string, tokenID: string, response: InteractionResponse) {
 
 		const res = {
 			type: InteractionResponseTable.to(response.type),
@@ -442,7 +443,7 @@ export class SlashCommandHandler {
 
 		this.log('Responded to Interaction with type', response.type);
 
-		await fetch(apiURL + '/interactions/' + tokenID + '/callback', {
+		await fetch(apiURL + `/interactions/${interactionID}/${tokenID}/callback`, {
 			method: 'POST',
 			headers: { ...this.headers, 'Content-Type': 'application/json'},
 			body: JSON.stringify(res)

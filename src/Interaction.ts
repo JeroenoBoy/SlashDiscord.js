@@ -1,4 +1,4 @@
-import { Client, EmbedField, Guild, GuildMember, TextChannel } from "discord.js";
+import { Client, Guild, GuildMember, MessageEmbed, TextChannel } from "discord.js";
 import { SlashCommandHandler, SlashCommand } from ".";
 import { ApplicationCommandOption } from "./SlashCommand";
 
@@ -109,8 +109,6 @@ export class Interaction implements IInteraction {
 
 			// Parsing options
 
-			console.log(cmdOption.type);
-
 			switch(cmdOption.type) {
 				case 'CHANNEL':
 					option.value = this.client.channels.cache.get(option.value)
@@ -141,7 +139,7 @@ export class Interaction implements IInteraction {
 		if(this.reply_send) throw new Error('Can only execute the callback once.');
 		this.reply_send = true;
 
-		await this.handler.respond(this.id + '/' + this.token, {
+		await this.handler.respond(this.id, this.token, {
 			type: showSource ? 'AcknowledgeWithSource' : 'Acknowledge'
 		});
 	}
@@ -151,16 +149,14 @@ export class Interaction implements IInteraction {
 	 * Send a message back to the user, this is excluding source.
 	 * @param msg the message to send
 	 */
-	async send(msg: string) {
+	async send(...messages: InteractionMessage[]) {
 		if(this.reply_send) throw new Error('Can only execute the callback once.');
 		this.reply_send = true;
 
-		await this.handler.respond(this.id + '/' + this.token, {
+		await this.handler.respond(this.id, this.token, {
 			type: 'ChannelMessage',
-			data: {
-				content: msg
-			}
-		});	
+			data: this.parseMessages(messages)
+		});
 	}
 
 
@@ -168,16 +164,33 @@ export class Interaction implements IInteraction {
 	 * Reply to a interaction, this is including source.
 	 * @param msg the message to send
 	 */
-	async reply(msg: string) {
+	async reply(...messages: InteractionMessage[]) {
 		if(this.reply_send) throw new Error('Can only execute the callback once.');
 		this.reply_send = true;
 
-		await this.handler.respond(this.id + '/' + this.token, {
+		await this.handler.respond(this.id, this.token, {
 			type: 'ChannelMessageWithSource',
-			data: {
-				content: msg
-			}
+			data: this.parseMessages(messages)
 		});	
+	}
+
+
+	/**
+	 * Parse the message to a InteractionCallbackData object
+	 */
+	private parseMessages(_messages: InteractionMessage[]): InteractionCallbackData {
+		const messages: string[] = [];
+		const embeds: object[] = [];
+
+		for(const message of _messages) {
+			if(typeof message === 'string') messages.push(message);
+			else embeds.push(message.toJSON());
+		}
+
+		return {
+			content: messages.join(' '),
+			embeds: embeds
+		}
 	}
 }
 
@@ -242,6 +255,8 @@ export interface InteractionOption<T = any> {
 	options?: InteractionOption[]
 }
 
+export type InteractionMessage = string | MessageEmbed;
+
 
 //
 //	Interaction Response
@@ -266,5 +281,5 @@ export type InteractionResponseType =
 export interface InteractionCallbackData {
 	tts?: boolean
 	content: string
-	embeds?: EmbedField[]
+	embeds?: object[]
 }

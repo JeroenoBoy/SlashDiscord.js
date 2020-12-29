@@ -1,0 +1,5 @@
+{
+	"name": "Embeds",
+	"description": "Testing 0.1.5 Interaction.reply embeds parser.",
+	"file": "embeds/index.ts"
+}

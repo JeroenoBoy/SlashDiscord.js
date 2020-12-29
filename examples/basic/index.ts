@@ -21,6 +21,7 @@ handler.addCommand({
 })
 .run(interaction => {
 	interaction.reply('Hello World!');
+	interaction.channel.send({});
 });
 
 
@@ -29,7 +30,3 @@ client.once('ready', () => {
 })
 
 client.login(process.env.TEST_BOT_TOKEN);
-
-
-
-
