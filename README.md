@@ -1,7 +1,7 @@
 # SlashDiscord.js
  An advanced slash command handler for discord
  <br />
- Docs: [WIP](https://app.gitbook.com/@jeroenoboy/s/slashdiscord-js/)
+ [Docs](https://jeroenoboy.gitbook.io/slashdiscord-js/)
 
 
 ```bash
