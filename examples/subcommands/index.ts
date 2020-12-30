@@ -1,3 +1,4 @@
+require('dotenv').config();
 import chalk from 'chalk';
 import { Client } from 'discord.js';
 import { SlashCommandHandler } from '../../src';
@@ -59,7 +60,7 @@ handler.addCommand({
 .runSub('moderation mute user', async interaction => {
 	const interactionData = interaction.getOption<String>('moderation mute user');
 	
-	interaction.reply(`Oops! i can\'t actually mute <@${interactionData!.value}>.`);
+	interaction.reply(`Oops! i can\'t actually mute ${interactionData!.value}`);
 })
 .runSub('moderation mute', async interaction => {
 	interaction.reply('Oops! i can\'t actually mute.');

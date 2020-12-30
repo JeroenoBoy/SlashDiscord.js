@@ -1,3 +1,4 @@
+require('dotenv').config();
 import chalk from 'chalk';
 import { Client } from 'discord.js';
 import { SlashCommandHandler } from '../../src';
@@ -16,12 +17,11 @@ const handler = new SlashCommandHandler({
 //	Creating the commands, please note that this can take up to 1 hour to update
 
 handler.addCommand({
-	name: 'Hello',
+	name: 'hello',
 	description: 'Send a Hello World command to the bot.'
 })
 .run(interaction => {
 	interaction.reply('Hello World!');
-	interaction.channel.send({});
 });
 
 

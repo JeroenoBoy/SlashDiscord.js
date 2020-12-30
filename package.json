@@ -1,12 +1,13 @@
 {
   "name": "slashdiscord.js",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "An advanced slash command handler for discord",
   "main": "dist/index.js",
   "directories": {
     "example": "examples"
   },
   "dependencies": {
+    "chalk": "^4.1.0",
     "discord.js": "^12.5.1",
     "node-fetch": "^2.6.1"
   },
@@ -25,6 +26,11 @@
   },
   "scripts": {
     "test": "ts-node examples",
+    "test:basic": "ts-node examples/basic",
+    "test:embeds": "ts-node examples/embeds",
+    "test:options": "ts-node examples/options",
+    "test:sharding": "ts-node examples/shardingExample",
+    "test:subcommands": "ts-node examples/subcommands",
     "build": "tsc"
   },
   "repository": {
@@ -32,8 +38,17 @@
     "url": "git+https://github.com/JeroenoBoy/SlashDiscord.js.git"
   },
   "keywords": [
-    "Discord.js",
+    "ts",
+    "typescript",
+    "discord",
+    "discord.js",
+    "discord-bot",
+    "interactions",
+    "bot",
     "slash",
+    "command",
+    "commands",
+    "slashcommand",
     "slashcommands"
   ],
   "author": "Crystal Development",

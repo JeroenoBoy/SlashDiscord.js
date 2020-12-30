@@ -1,4 +1,3 @@
-require('dotenv').config();
 import figlet from 'figlet';
 import chalk from 'chalk';
 import PATH from 'path';

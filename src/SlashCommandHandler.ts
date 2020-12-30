@@ -1,6 +1,7 @@
 import { Client, TextChannel } from "discord.js";
-import fetch from 'node-fetch';
+import fetch, { Response } from 'node-fetch';
 import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse, InteractionOption } from ".";
+import ResponseError from "./errors/ResponseError";
 import InteractionResponseTable from './tables/InteractionResponseType';
 
 
@@ -243,16 +244,11 @@ export class SlashCommandHandler {
 
 		//	Retrieving commands
 		const commands = await fetch(this.baseURL + '/commands', { headers: this.headers })
-			.then(res=>res.json())
-			.then(data => {
-				if(data.message) throw new Error('Error while gathering commands ' + JSON.stringify(data))
-				return data;
-			})
-		if(!commands) throw new Error('Didn\'t recieve any commands');
-		
-		this.log(`Recieved ${commands.length} commands`);
+			.then((res) => this.checkFetchError(res))
 
-		
+		if(!commands) throw new Error('Didn\'t recieve any commands');
+		this.log(`Recieved ${commands.length} command`, commands.lengt > 1 ? 's' : '');
+
 		//	Parsing commands
 		
 		const foundCommands: string[] = [];
@@ -274,17 +270,15 @@ export class SlashCommandHandler {
 						method: 'DELETE',
 						headers: this.headers
 					})
-						.then(res => res.json())
-						.then(data => {
-							if(data.message)
-								throw new Error('Error while deleting command ' +  command.name + ' ' + JSON.stringify(data));
-						});
+						.then((res) => this.checkFetchError(res))
 				}
+
 				continue;
 			}
 			
 			//	applying extra data
 			
+			foundCommands.push(command.name);
 			registeredCommand.id = command.id;
 			registeredCommand.application_id = this.clientID;
 
@@ -303,35 +297,35 @@ export class SlashCommandHandler {
 					headers: { ...this.headers, 'Content-Type': 'application/json'},
 					body: registeredCommand.toJSON()
 				})
+					.then((res) => this.checkFetchError(res))
+
 				continue;
 			}
+
 		}
 		
 		//	Adding new commands
-
 
 		for(const [ name, command ] of this.commandData) {
 
 			if(foundCommands.find(c=>c==name)) continue;
 			if(!this.registerCommands) continue;
-			this.log('Creating command');
+			
+			this.log('Creating command', name);
 
 			//	Sending request to discord
 
-			await fetch(this.baseURL + '/commands', {
+			const data = await fetch(this.baseURL + '/commands', {
 				method: 'POST',
 				headers: { ...this.headers, 'Content-Type': 'application/json'},
 				body: command.toJSON()
 			})
-				.then(res => res.json())
-				.then(data => {
-					if(data.message)
-						throw new Error('Error while creating command ' +  command.name + ' ' + JSON.stringify(data));
+				.then((res) => this.checkFetchError(res))
+	
+			//	applying id and data
 
-					command.id = data.id;
-					command.application_id = data.application_id;
-				})
-
+			command.id = data.id;
+			command.application_id = data.application_id;
 		}
 
 		this.log('Finished parsing commands');
@@ -459,6 +453,25 @@ export class SlashCommandHandler {
 	log(msg: any, ...optionalParams: any[]) {
 		if(this.debug)
 			console.log(this.debugPrefix + ' ' + msg, ...optionalParams);
+	}
+
+
+	async checkFetchError<T = any>(res: Response): Promise<T | undefined> {
+
+		const data = await res.json()
+			.catch(() => {
+				return { instaReturn: true }
+			});
+
+		if(data.instaReturn)
+			return;
+
+		if(data.code != undefined) {
+			if(data.message)
+				throw new ResponseError('Error while making request: ' + data.message, data.errors)
+		}
+
+		return data;
 	}
 
 }

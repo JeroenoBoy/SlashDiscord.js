@@ -78,8 +78,8 @@ export class SlashCommand implements ApplicationCommand {
 	/**
 	 * 
 	 */
-	parsedOptions(): ApplicationCommandOption[] {
-		if(!this.options) return [];
+	parsedOptions(): ApplicationCommandOption[] | undefined {
+		if(!this.options) return;
 		const cloned = JSON.parse(JSON.stringify(this.options));
 
 		this.parsedown(cloned);

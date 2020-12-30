@@ -1,3 +1,4 @@
+require('dotenv').config();
 import chalk from 'chalk';
 import { Client, MessageEmbed } from 'discord.js';
 import { SlashCommandHandler } from '../../src';
