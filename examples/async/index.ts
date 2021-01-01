@@ -3,6 +3,10 @@ import chalk from 'chalk';
 import { Client } from 'discord.js';
 import { SlashCommandHandler } from '../../src';
 
+//	Sleep function
+
+const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 //	Creating the client
 
 const client = new Client();
@@ -18,9 +22,20 @@ const handler = new SlashCommandHandler({
 
 handler.addCommand({
 	name: 'hello',
-	description: 'Send a Hello World command to the bot.'
+	description: 'Send a Hello World command to the bot.',
+	options: [{
+		type: 'STRING',
+		name: 'test',
+		description: 'just a test.',
+		required: false
+	}]
 })
-.run(cmd => {
+.runSub('test', async cmd => {
+	await sleep(50);
+	cmd.reply('Hello World!');
+})
+.run(async cmd => {
+	await sleep(50);
 	cmd.reply('Hello World!');
 });
 

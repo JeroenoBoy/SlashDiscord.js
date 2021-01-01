@@ -58,8 +58,8 @@ export class SlashCommand implements ApplicationCommand {
 	 * Set the main InteractionFunction.
 	 * @param callback the function called upon execution
 	 */
-	run(fn: InteractionFunction): SlashCommand {
-		this.runFunction = fn;
+	run(callback: InteractionFunction): SlashCommand {
+		this.runFunction = callback;
 		return this;
 	}
 
@@ -67,17 +67,14 @@ export class SlashCommand implements ApplicationCommand {
 	/**
 	 * Run a sub command, for example: 'example ping user'.
 	 * @param subcommand the subcommand which should be executed
-	 * @param fn function that executes this command
+	 * @param callback function that executes this command
 	 */
-	runSub(subcommand: string, fn: InteractionFunction): SlashCommand {
-		this.subFunctions.set(subcommand, fn);
+	runSub(subcommand: string, callback: InteractionFunction): SlashCommand {
+		this.subFunctions.set(subcommand, callback);
 		return this;
 	}
 
 
-	/**
-	 * 
-	 */
 	parsedOptions(): ApplicationCommandOption[] | undefined {
 		if(!this.options) return;
 		const cloned = JSON.parse(JSON.stringify(this.options));

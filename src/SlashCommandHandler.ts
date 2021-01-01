@@ -399,7 +399,7 @@ export class SlashCommandHandler {
 	
 					while(!done && subCommand.length > 0) {
 						if(command.subFunctions.has(subCommand.join(' '))) {
-							command.subFunctions.get(subCommand.join(' '))!(interaction);
+							await command.subFunctions.get(subCommand.join(' '))!(interaction);
 							done = true;
 						}
 						subCommand.pop();

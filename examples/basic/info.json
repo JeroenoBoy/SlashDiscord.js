@@ -1,5 +1,5 @@
 {
 	"name": "Basic",
-	"description": "Basic testing of this package.",
+	"description": "The basic testing.",
 	"file": "basic/index.ts"
 }
