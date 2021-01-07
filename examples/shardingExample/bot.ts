@@ -31,6 +31,3 @@ client.once('ready', () => {
 })
 
 client.login();
-
-
-export {}
