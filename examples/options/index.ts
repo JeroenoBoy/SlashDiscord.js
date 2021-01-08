@@ -26,13 +26,13 @@ handler.addCommand({
 		description: 'Ping a user for show :D'
 	}]
 })
-.runSub('user', interaction => {
-	const option = interaction.getOption<User>('user');
+.run('user', interaction => {
+	const user = interaction.option<User>('user');
 	
-	if((!option) || (!option.value))
+	if(!user)
 		return interaction.reply('Hello World!');
 
-	interaction.reply(`Hello <@${option.value.id}>!`);
+	interaction.reply(`Hello ${user}!`);
 })
 .run(interaction => {
 	interaction.reply('Hello World!');

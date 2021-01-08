@@ -30,7 +30,7 @@ handler.addCommand({
 		required: false
 	}]
 })
-.runSub('test', async cmd => {
+.run('test', async cmd => {
 	await sleep(50);
 	cmd.reply('Hello World!');
 })

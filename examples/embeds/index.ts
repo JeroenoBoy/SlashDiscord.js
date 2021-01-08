@@ -36,7 +36,7 @@ handler.addCommand({
 		.setColor('#00aaff')
 	);
 })
-.runSub('extend', interaction => {
+.run('extend', interaction => {
 	const { member } = interaction;
 
 	interaction.reply(

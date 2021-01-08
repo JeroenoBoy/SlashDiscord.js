@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { Client, Guild, GuildMember, MessageEmbed, TextChannel } from "discord.js";
 import { SlashCommandHandler, SlashCommand } from ".";
 import { ApplicationCommandOption } from "./SlashCommand";
@@ -63,12 +64,45 @@ export class Interaction implements IInteraction {
 		this.token = d.token;
 	}
 
+	
+	/**
+	 * 
+	 * @param option the desired option.
+	 * @returns {T | undefined | null}
+	 * 	Returns the type when found and the value is set.
+	 * 	Returns undefined when the type is found but the value not set.
+	 * 	Returns null when the type is not found.
+	 */
+	option<T = any>(option: string | string[]): T | undefined | null {
+		const optionSplitted = typeof option === 'string'
+			? option.split(' ')
+			: option;
+		
+		let options = this.data.options;
+		while(options != undefined) {
+			const option = options.find(o=>o.name === optionSplitted[0]);
+
+			if(!option)
+				return null;
+				
+			if(optionSplitted.length <= 1) {
+				return option.value;
+
+			}
+
+			optionSplitted.shift();
+			options = option.options;
+		}
+	}
+
 
 	/**
+	 * @deprecated
 	 * Get a selected option.
 	 * @param option the option, example: 'moderation mute user'
 	 */
 	getOption<T = any>(option: string): InteractionOption<T> | undefined {
+		console.log(chalk.yellow('SlashDiscord.js ') + chalk.red('DeprecationWarning: Interaction.getOption(option) is deprecated, please use Interaction.option(option)'));
 		const optionSplitted = option.split(' ');
 		
 		let options = this.data.options;

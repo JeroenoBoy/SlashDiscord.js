@@ -1,5 +1,7 @@
+import chalk from "chalk"
 import { InteractionFunction, SlashCommandHandler } from "."
 import ApplicationCommandOptionTable from "./tables/ApplicationCommandType"
+
 
 export class SlashCommand implements ApplicationCommand {
 
@@ -34,14 +36,9 @@ export class SlashCommand implements ApplicationCommand {
 	handler: SlashCommandHandler
 
 	/**
-	 * The main function ran by this command.
-	 */
-	runFunction: InteractionFunction = () => {}
-
-	/**
 	 * All the subcommand functions.
 	 */
-	subFunctions: Map<string, InteractionFunction> = new Map<string, InteractionFunction>()
+	functionMap: Map<string, InteractionFunction> = new Map<string, InteractionFunction>()
 
 	constructor(command: ApplicationCommand, handler: SlashCommandHandler) {
 		this.id = command.id;
@@ -51,26 +48,46 @@ export class SlashCommand implements ApplicationCommand {
 		this.options = command.options;
 
 		this.handler = handler;
+
+		this.functionMap.set('', () => {})
 	}
 
 
 	/**
 	 * Set the main InteractionFunction.
-	 * @param callback the function called upon execution
+	 * @param callback the function being ran when executed.
 	 */
-	run(callback: InteractionFunction): SlashCommand {
-		this.runFunction = callback;
+	run(callback: InteractionFunction): SlashCommand;
+
+	/**
+	 * Execute a specific option.
+	 * @param option the option to listen to. 
+	 * @param callback the function being ran when executed
+	 */
+	run(option: string, callback: InteractionFunction): SlashCommand;
+
+
+	run(callbackOrOption: string | InteractionFunction, callback?: InteractionFunction): SlashCommand {
+		if(typeof callbackOrOption === 'string') {
+			if(typeof callback !== 'function') throw new Error('callback must be of type function.');
+			this.functionMap.set(callbackOrOption, callback);
+		}
+		else
+			this.functionMap.set('', callbackOrOption);
+
 		return this;
 	}
 
 
 	/**
+	 * @deprecated
 	 * Run a sub command, for example: 'example ping user'.
 	 * @param subcommand the subcommand which should be executed
 	 * @param callback function that executes this command
 	 */
 	runSub(subcommand: string, callback: InteractionFunction): SlashCommand {
-		this.subFunctions.set(subcommand, callback);
+		console.log(chalk.yellow('SlashDiscord.js ') + chalk.red('DeprecationWarning: SlashCommand.runSub(option, callback) is deprecated, please use SlashCommand.run(option, callback)'));
+		this.functionMap.set(subcommand, callback);
 		return this;
 	}
 

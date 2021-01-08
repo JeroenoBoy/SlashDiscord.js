@@ -381,7 +381,7 @@ export class SlashCommandHandler {
 				let done = false;
 
 				if(interaction.data.options
-				&& command.subFunctions.size > 0) {
+				&& command.functionMap.size > 0) {
 
 					const subCommand: string[] = [];
 					let currentOption: InteractionOption | undefined = interaction.data.options![0];
@@ -398,8 +398,8 @@ export class SlashCommandHandler {
 					//	Checking if the subcommand path exists, and if it does run it
 	
 					while(!done && subCommand.length > 0) {
-						if(command.subFunctions.has(subCommand.join(' '))) {
-							await command.subFunctions.get(subCommand.join(' '))!(interaction);
+						if(command.functionMap.has(subCommand.join(' '))) {
+							await command.functionMap.get(subCommand.join(' '))!(interaction);
 							done = true;
 						}
 						subCommand.pop();
@@ -409,7 +409,7 @@ export class SlashCommandHandler {
 				//	normal reply
 				
 				if(!done)
-					await command.runFunction(interaction);
+					await command.functionMap.get('')!(interaction);
 
 				//	Checking if response was send
 

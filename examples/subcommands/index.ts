@@ -1,6 +1,6 @@
 require('dotenv').config();
 import chalk from 'chalk';
-import { Client } from 'discord.js';
+import { Client, User } from 'discord.js';
 import { SlashCommandHandler } from '../../src';
 
 //	Creating the client
@@ -57,18 +57,18 @@ handler.addCommand({
 		}
 	]
 })
-.runSub('moderation mute user', async interaction => {
-	const interactionData = interaction.getOption<String>('moderation mute user');
+.run('moderation mute user', async interaction => {
+	const user = interaction.option<User>('moderation mute user')!;
 	
-	interaction.reply(`Oops! i can\'t actually mute ${interactionData!.value}`);
+	interaction.reply(`Oops! i can\'t actually mute ${user}`);
 })
-.runSub('moderation mute', async interaction => {
+.run('moderation mute', async interaction => {
 	interaction.reply('Oops! i can\'t actually mute.');
 })
-.runSub('moderation', async interaction => {
+.run('moderation', async interaction => {
 	interaction.reply('I can\'t actually ban or kick someone.');
 })
-.runSub('ping', async interaction => {
+.run('ping', async interaction => {
 
 	//	run command callback without origin message
 	interaction.pong(false);
@@ -78,7 +78,7 @@ handler.addCommand({
 	const msg = await interaction.channel.send('Please wait....');
 	msg.edit(`Latency: ${Date.now()-then}ms.\nAPI latency: ${Math.round(client.ws.ping)}ms.`);
 })
-.runSub('hello', async interaction => {
+.run('hello', async interaction => {
 
 	//	This is my own testing :P
 	await interaction.send('Hello');
