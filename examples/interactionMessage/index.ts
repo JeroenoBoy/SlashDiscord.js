@@ -31,8 +31,13 @@ handler.addCommand({
 	}]
 })
 .run('test', async cmd => {
-	await sleep(50);
-	cmd.reply('Hello World!');
+	const msg = await cmd.send('test!', cmd.member.toString());
+
+	await sleep(1000);
+	await msg.edit('Edited!');
+
+	await sleep(1000);
+	await msg.delete();
 })
 .run(async cmd => {
 	await sleep(50);

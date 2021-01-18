@@ -1,12 +1,13 @@
-import { Client, TextChannel } from "discord.js";
+import { Client, Guild, TextChannel } from "discord.js";
 import fetch, { Response } from 'node-fetch';
 import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse, InteractionOption } from ".";
 import ResponseError from "./errors/ResponseError";
+import { SlashGuild } from "./SlashGuild";
 import InteractionResponseTable from './tables/InteractionResponseType';
 
 
 
-const apiURL = 'https://discord.com/api/v8';
+export const apiURL = 'https://discord.com/api/v8';
 
 
 export interface SlashCommandOptions {
@@ -104,11 +105,17 @@ export class SlashCommandHandler {
 	clientID: string;
 	
 	//	Request stuff
-	private headers: { [key: string]: string }
-	private baseURL = apiURL + '/applications'
+	headers: { [key: string]: string }
+	baseURL = apiURL + '/applications'
 	
 	//	Command data stuff
-	private commandData: Map<SlashCommand['id'], SlashCommand> = new Map();
+	private commandData: Map<SlashCommand['name'], SlashCommand> = new Map();
+	private commandById: Map<SlashCommand['id'], SlashCommand['name']> = new Map();
+
+	/**
+	 * A map containing the commands for a specific guild.
+	 */
+	guilds: Map<Guild['id'], SlashGuild> = new Map();
 	
 	//	Options
 	
@@ -166,7 +173,6 @@ export class SlashCommandHandler {
 	 * 
 	 * @param options Options assigned to this instance
 	 */
-
 	constructor(options: SlashCommandOptions) {
 		if(options.client == undefined) throw new Error('Option Client must be defined.');
 
@@ -225,13 +231,35 @@ export class SlashCommandHandler {
 
 	/**
 	 * Create and register a new Command.
-	 * @param command The new command data
+	 * @param command The new command data.
 	 */
-	addCommand(command: ApplicationCommand): SlashCommand {
-		const cmd = new SlashCommand(command, this);
-		this.commandData.set(cmd.name, cmd);
+	addCommand(command: ApplicationCommand): SlashCommand
+	/**
+	 * Create and register a new Command for a specific guild.
+	 * @param guildID The guild this command is assigned to
+	 * @param command The command data.
+	 */
+	addCommand(guildID: string, command: ApplicationCommand): SlashCommand
+
+	addCommand(guildIDOrCommand: ApplicationCommand | string, command?: ApplicationCommand): SlashCommand {
+		let cmd: SlashCommand;
+
+		if(typeof guildIDOrCommand === 'string') {
+			if(!this.guilds.has(guildIDOrCommand))
+				this.createGuild(guildIDOrCommand);
+			
+			cmd = this.guilds.get(guildIDOrCommand)!.addCommand(command!);
+		}
+		else {
+			cmd = new SlashCommand(guildIDOrCommand, this);
+			this.commandData.set(cmd.name, cmd);
+		}
 		return cmd;
+
 	}
+
+
+	private getById = (id: string) => this.commandData.get(this.commandById.get(id)!);
 
 
 	/**
@@ -240,10 +268,18 @@ export class SlashCommandHandler {
 	 * NOTE: You don't need to execute this function IF the user is running a Discord.Client instance
 	 */
 	async start() {
+		this.log('Started parsing commands');
+
+		//	Parsing guild commands first
+
+		for(const [_,guild] of this.guilds)
+			await guild.load();
+			
+		//	Retrieving commands
+		
 		this.log('Getting commands');
 
-		//	Retrieving commands
-		const commands = await fetch(this.baseURL + '/commands', { headers: this.headers })
+		const commands = await fetch(`${this.baseURL}/commands`, { headers: this.headers })
 			.then((res) => this.checkFetchError(res))
 
 		if(!commands) throw new Error('Didn\'t recieve any commands');
@@ -263,15 +299,8 @@ export class SlashCommandHandler {
 				//	Deleting the command
 				
 				if(this.deleteUnregisteredCommands
-				&& this.registerCommands) {
-					this.log('Deleting command', command.name);
-				
-					await fetch(this.baseURL + '/commands/' + command.id, {
-						method: 'DELETE',
-						headers: this.headers
-					})
-						.then((res) => this.checkFetchError(res))
-				}
+				&& this.registerCommands)
+					await this.deleteCommand(command);
 
 				continue;
 			}
@@ -281,6 +310,7 @@ export class SlashCommandHandler {
 			foundCommands.push(command.name);
 			registeredCommand.id = command.id;
 			registeredCommand.application_id = this.clientID;
+			this.commandById.set(command.id, command.name);
 
 			//	Checking for updates
 
@@ -289,16 +319,7 @@ export class SlashCommandHandler {
 			if((JSON.stringify(registeredCommand.parsedOptions()) != (command.options ? JSON.stringify(command.options) : undefined))
 			|| registeredCommand.description != command.description
 			) {
-
-				this.log('Patching command', command.name);
-
-				await fetch(this.baseURL + '/commands/' + command.id, {
-					method: 'PATCH',
-					headers: { ...this.headers, 'Content-Type': 'application/json'},
-					body: registeredCommand.toJSON()
-				})
-					.then((res) => this.checkFetchError(res))
-
+				await registeredCommand.save();
 				continue;
 			}
 
@@ -311,21 +332,10 @@ export class SlashCommandHandler {
 			if(foundCommands.find(c=>c==name)) continue;
 			if(!this.registerCommands) continue;
 			
-			this.log('Creating command', name);
+			//	Creating the command
 
-			//	Sending request to discord
-
-			const data = await fetch(this.baseURL + '/commands', {
-				method: 'POST',
-				headers: { ...this.headers, 'Content-Type': 'application/json'},
-				body: command.toJSON()
-			})
-				.then((res) => this.checkFetchError(res))
-	
-			//	applying id and data
-
-			command.id = data.id;
-			command.application_id = data.application_id;
+			await command.create();
+			this.commandById.set(command.id, command.name);
 		}
 
 		this.log('Finished parsing commands');
@@ -349,10 +359,8 @@ export class SlashCommandHandler {
 				const channel = this.client.channels.cache.get(d.channel_id)
 					|| await this.client.channels.fetch(d.channel_id);
 
-					
 				//	Checking twice
 
-					
 				if(!(channel instanceof TextChannel)) throw new Error('Channel isn\'t a TextChannel');
 				if(!channel) throw new Error('Channel couldn\'t be resolved in INTERACTION_CREATE');
 
@@ -362,7 +370,9 @@ export class SlashCommandHandler {
 
 				//	Getting commands
 
-				const command = this.commandData.get(interaction.data.name);
+				const command = this.guilds.get(interaction.guild.id)?.getID(interaction.data.id)
+					||	this.getById(interaction.data.id);
+				
 				if(!command) {
 					if(this.sendNoLongerAvailable)
 						interaction.reply(this.noLongerAvailableMessage);
@@ -423,6 +433,42 @@ export class SlashCommandHandler {
 
 
 	/**
+	 * Delete a command from the handler.
+	 * @param command The command to delete.
+	 * @param guild The guild this command is registered in.
+	 */
+	async deleteCommand(command: ApplicationCommand, guild?: string) {
+		this.log('Deleting command', command.name);
+
+		const urlAdd = guild ? `/guilds/${guild}` : '' + `/commands/${command.id}`
+		await fetch(this.baseURL + urlAdd, {
+			method: 'DELETE',
+			headers: this.headers
+		})
+		.then((res) => this.checkFetchError(res))
+	}
+
+
+	/**
+	 * Create a new guild.
+	 * @param guildID Id of the guild to create.
+	 */
+	createGuild(guildID: string) {
+		this.guilds.set(guildID, new SlashGuild(guildID, this))
+	}
+
+	/**
+	 * Get a guild
+	 * @param guildID id of the guild to get.
+	 */
+	getGuild(guildID: string) {
+		if(!this.guilds.has(guildID))
+			this.createGuild(guildID);
+		return this.guilds.get(guildID)!;
+	}
+
+
+	/**
 	 * Respond to an interaction.
 	 * @param interactionID The ID of the interaction.
 	 * @param tokenID The token of the interaction.
@@ -437,7 +483,7 @@ export class SlashCommandHandler {
 
 		this.log('Responded to Interaction with type', response.type);
 
-		await fetch(apiURL + `/interactions/${interactionID}/${tokenID}/callback`, {
+		return await fetch(apiURL + `/interactions/${interactionID}/${tokenID}/callback`, {
 			method: 'POST',
 			headers: { ...this.headers, 'Content-Type': 'application/json'},
 			body: JSON.stringify(res)

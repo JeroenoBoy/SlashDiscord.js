@@ -1,0 +1,5 @@
+{
+	"name": "GuildCommands.",
+	"description": "Testing the 1.0.0 GuildCommand feature.",
+	"file": "guildCommand/index.ts"
+}

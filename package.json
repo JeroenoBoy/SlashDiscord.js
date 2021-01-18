@@ -29,8 +29,10 @@
   },
   "scripts": {
     "test": "ts-node examples",
-    "test:basic": "ts-node examples/basic",
+    "test:async": "ts-node examples/async",
     "test:embeds": "ts-node examples/embeds",
+    "test:guildcommand": "ts-node examples/guildCommand",
+    "test:interactionmessage": "ts-node examples/interactionMessage",
     "test:options": "ts-node examples/options",
     "test:sharding": "ts-node examples/shardingExample",
     "test:subcommands": "ts-node examples/subcommands",

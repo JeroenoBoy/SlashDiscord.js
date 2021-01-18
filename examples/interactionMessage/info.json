@@ -1,0 +1,5 @@
+{
+	"name": "InteractionMessage",
+	"description": "Testing the new InteractionMessage system.",
+	"file": "interactionMessage/index.ts"
+}

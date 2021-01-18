@@ -1,7 +1,10 @@
 import chalk from "chalk";
 import { Client, Guild, GuildMember, MessageEmbed, TextChannel } from "discord.js";
 import { SlashCommandHandler, SlashCommand } from ".";
+import { InteractionMessage } from "./InteractionMessage";
 import { ApplicationCommandOption } from "./SlashCommand";
+import { apiURL } from "./SlashCommandHandler";
+import fetch from 'node-fetch';
 
 export type InteractionFunction = (interaction: Interaction) => any | Promise<any>;
 
@@ -40,7 +43,10 @@ export class Interaction implements IInteraction {
 	 */
 	handler: SlashCommandHandler;
 
-	private token: string
+	/**
+	 * The webhook token for this interaction
+	 */
+	token: string
 
 	/**
 	 * Used to check if a reply has already been send.
@@ -80,7 +86,7 @@ export class Interaction implements IInteraction {
 		
 		let options = this.data.options;
 		while(options != undefined) {
-			const option = options.find(o=>o.name === optionSplitted[0]);
+			const option = options.find(o=>o.name.toLowerCase() === optionSplitted[0].toLowerCase());
 
 			if(!option)
 				return null;
@@ -183,14 +189,25 @@ export class Interaction implements IInteraction {
 	 * Send a message back to the user, this is excluding source.
 	 * @param msg the message to send
 	 */
-	async send(...messages: InteractionMessage[]) {
-		if(this.reply_send) throw new Error('Can only execute the callback once.');
-		this.reply_send = true;
+	async send(...messages: InteractionMessageType[]) {
+		let id = '@original';
+		if(this.reply_send) {
+			const data = await fetch(apiURL + `/webhooks/${this.handler.clientID}/${this.token}`, {
+				method: 'POST',
+				headers: { ...this.handler.headers, 'Content-Type': 'application/json'},
+				body: JSON.stringify(Interaction.parseMessages(messages))
+			}).then(r=>r.json());
+			id = data.id
+;		}
 
-		await this.handler.respond(this.id, this.token, {
-			type: 'ChannelMessage',
-			data: this.parseMessages(messages)
-		});
+		else
+			await this.handler.respond(this.id, this.token, {
+				type: 'ChannelMessage',
+				data: Interaction.parseMessages(messages)
+			});
+
+		this.reply_send = true;
+		return new InteractionMessage(this, id);
 	}
 
 
@@ -198,21 +215,23 @@ export class Interaction implements IInteraction {
 	 * Reply to a interaction, this is including source.
 	 * @param msg the message to send
 	 */
-	async reply(...messages: InteractionMessage[]) {
-		if(this.reply_send) throw new Error('Can only execute the callback once.');
+	async reply(...messages: InteractionMessageType[]) {
+		if(this.reply_send) return await this.send(...messages);
 		this.reply_send = true;
 
 		await this.handler.respond(this.id, this.token, {
 			type: 'ChannelMessageWithSource',
-			data: this.parseMessages(messages)
-		});	
+			data: Interaction.parseMessages(messages)
+		});
+
+		return new InteractionMessage(this);
 	}
 
 
 	/**
 	 * Parse the message to a InteractionCallbackData object
 	 */
-	private parseMessages(_messages: InteractionMessage[]): InteractionCallbackData {
+	static parseMessages(_messages: InteractionMessageType[]): InteractionCallbackData {
 		const messages: string[] = [];
 		const embeds: object[] = [];
 
@@ -289,7 +308,7 @@ export interface InteractionOption<T = any> {
 	options?: InteractionOption[]
 }
 
-export type InteractionMessage = string | MessageEmbed;
+export type InteractionMessageType = string | MessageEmbed;
 
 
 //

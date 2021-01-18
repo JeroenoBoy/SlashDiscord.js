@@ -1,4 +1,5 @@
 import chalk from "chalk"
+import fetch from 'node-fetch';
 import { InteractionFunction, SlashCommandHandler } from "."
 import ApplicationCommandOptionTable from "./tables/ApplicationCommandType"
 
@@ -9,6 +10,11 @@ export class SlashCommand implements ApplicationCommand {
 	 * The ID of this command.
 	 */
 	id?: string
+
+	/**
+	 * If this command is for a specific guild.
+	 */
+	guildID?: string
 
 	/**
 	 * The ID of the application.
@@ -121,6 +127,61 @@ export class SlashCommand implements ApplicationCommand {
 			options: this.parsedOptions(),
 		};
 		return JSON.stringify(a);
+	}
+
+
+	//
+	//	Command actions
+	//
+
+
+	/**
+	 * Send the request to save this command.
+	 */
+	async save() {
+		this.handler.log('Patching command', this.name);
+
+		const urlAdd = this.guildID ? `/guilds/${this.guildID}` : ''
+		await fetch(this.handler.baseURL + urlAdd + `/commands/${this.id}`, {
+			method: 'PATCH',
+			headers: { ...this.handler.headers, 'Content-Type': 'application/json'},
+			body: this.toJSON()
+		})
+		.then((res) => this.handler.checkFetchError(res))
+	}
+
+
+	/**
+	 * Send the request to delete this command.
+	 */
+	async delete() {
+		this.handler.log('Deleting command', this.name);
+
+		const urlAdd = this.guildID ? `/guilds/${this.guildID}` : ''
+		await fetch(this.handler.baseURL + urlAdd + `/commands/${this.id}`, {
+			method: 'DELETE',
+			headers: this.handler.headers
+		})
+		.then((res) => this.handler.checkFetchError(res))
+	}
+
+
+	/**
+	 * Send the request to create this command.
+	 */
+	async create() {
+		this.handler.log('Creating command', this.name);
+
+		const urlAdd = this.guildID ? `/guilds/${this.guildID}` : ''
+		const data = await fetch(this.handler.baseURL + urlAdd + `/commands`, {
+			method: 'POST',
+			headers: { ...this.handler.headers, 'Content-Type': 'application/json'},
+			body: this.toJSON()
+		})
+		.then((res) => this.handler.checkFetchError(res));
+
+		this.id = data.id;
+		this.application_id = data.application_id;
 	}
 }
 

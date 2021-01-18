@@ -22,8 +22,18 @@ export {
 	InteractionType,
 	InteractionData,
 	InteractionOption,
+	InteractionMessageType,
 
 	InteractionResponse,
 	InteractionResponseType,
 	InteractionCallbackData
 } from './Interaction';
+
+
+export {
+	SlashGuild
+} from './SlashGuild';
+
+export { 
+	InteractionMessage
+} from './InteractionMessage';
