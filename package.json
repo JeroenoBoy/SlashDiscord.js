@@ -1,6 +1,6 @@
 {
   "name": "slashdiscord.js",
-  "version": "0.2.3",
+  "version": "1.0.0",
   "description": "An advanced slash command handler for discord",
   "main": "dist/index.js",
   "directories": {
