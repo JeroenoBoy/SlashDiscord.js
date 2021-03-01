@@ -1,7 +1,7 @@
 require('dotenv').config();
 import chalk from "chalk";
 import { ShardingManager } from "discord.js"
-import { SlashCommandHandler } from "../../src";
+import { SlashCommandHandler } from "../../dist";
 
 
 (async () => {

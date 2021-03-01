@@ -35,7 +35,7 @@ handler.addCommand({
 })
 
 handler.addCommand(guildID, {
-	name: 'hello',
+	name: 'bye',
 	description: '(GUILD) Send a Hello World command to the bot.',
 })
 .run(c => c.reply('Hello Guild!'))

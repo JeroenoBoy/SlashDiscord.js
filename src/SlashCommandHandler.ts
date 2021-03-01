@@ -440,7 +440,7 @@ export class SlashCommandHandler {
 	async deleteCommand(command: ApplicationCommand, guild?: string) {
 		this.log('Deleting command', command.name);
 
-		const urlAdd = guild ? `/guilds/${guild}` : '' + `/commands/${command.id}`
+		const urlAdd = (guild ? `/guilds/${guild}` : '') + `/commands/${command.id}`;
 		await fetch(this.baseURL + urlAdd, {
 			method: 'DELETE',
 			headers: this.headers

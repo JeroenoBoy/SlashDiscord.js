@@ -1,6 +1,6 @@
 {
   "name": "slashdiscord.js",
-  "version": "1.0.0",
+  "version": "1.0.11",
   "description": "An advanced slash command handler for discord",
   "main": "dist/index.js",
   "directories": {
@@ -14,13 +14,13 @@
     "discord.js": "^12.5.1"
   },
   "devDependencies": {
-    "discord.js": "^12.5.1",
     "@types/chalk": "^2.2.0",
     "@types/clui": "^0.3.0",
     "@types/figlet": "^1.2.1",
     "@types/inquirer": "^7.3.1",
-    "@types/node-fetch": "^2.5.7",
+    "@types/node-fetch": "^2.5.8",
     "clui": "^0.3.6",
+    "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "figlet": "^1.5.0",
     "inquirer": "^7.3.3",

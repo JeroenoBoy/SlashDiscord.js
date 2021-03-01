@@ -70,7 +70,7 @@ export class SlashGuild {
 				
 				if(this.handler.deleteUnregisteredCommands
 				&& this.handler.registerCommands)
-					await this.handler.deleteCommand(command);
+					await this.handler.deleteCommand(command, this.id);
 
 				continue;
 			}

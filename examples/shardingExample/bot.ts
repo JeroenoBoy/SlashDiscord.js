@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Client } from 'discord.js';
-import { SlashCommandHandler } from '../../src';
+import { SlashCommandHandler } from '../../dist';
 
 //	Creating the client
 
@@ -19,15 +19,15 @@ const handler = new SlashCommandHandler({
 
 handler.addCommand({
 	name: 'shard',
-	description: 'Get the shard this bot is running from.'
+	description: 'Get the shard this bot is running from...'
 })
 .run(interaction => {
-	interaction.reply(`This guild is using shard #${client.shard.ids[0]}`);
+	interaction.reply(`This guild is using shard #${client.shard!.ids[0]}`);
 });
 
 
 client.once('ready', () => {
-	console.log(`[${client.shard.ids[0]}] Logged in as ${chalk.green(client.user!.tag)}`)
+	console.log(`[${client.shard!.ids[0]}] Logged in as ${chalk.green(client.user!.tag)}`)
 })
 
 client.login();
