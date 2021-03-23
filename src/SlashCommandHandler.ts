@@ -288,8 +288,7 @@ export class SlashCommandHandler {
 		//	Parsing commands
 		
 		const foundCommands: string[] = [];
-		for(const i in commands) {
-			const command = commands[i];
+		for(const command of commands) {
 			const registeredCommand = this.commandData.get(command.name);
 			
 			//	Deleting command
