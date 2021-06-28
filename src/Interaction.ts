@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { Client, Guild, GuildMember, MessageEmbed, TextChannel } from "discord.js";
+import { Client, DMChannel, Guild, GuildMember, MessageEmbed, TextChannel } from "discord.js";
 import { SlashCommandHandler, SlashCommand } from ".";
 import { InteractionMessage } from "./InteractionMessage";
 import { ApplicationCommandOption } from "./SlashCommand";
@@ -25,15 +25,15 @@ export class Interaction implements IInteraction {
 	/**
 	 * The guild this command has been executed in.
 	 */
-	guild: Guild;
+	guild?: Guild = undefined;
 	/**
 	 * The channel this command has been executed in.
 	 */
-	channel: TextChannel;
+	channel: TextChannel | DMChannel;
 	/**
 	 * The member that executed this command.
 	 */
-	member: GuildMember;
+	member?: GuildMember = undefined;
 	/**
 	 * The client this interaction uses.
 	 */
@@ -55,14 +55,18 @@ export class Interaction implements IInteraction {
 	reply_send: boolean = false;
 
 
-	constructor(client: Client, handler: SlashCommandHandler, channel: TextChannel, d: any) {
+	constructor(client: Client, handler: SlashCommandHandler, channel: TextChannel | DMChannel, d: any) {
 		this.id = d.id;
 		this.type = d.type;
 		this.data = d.data;
 
-		this.guild = channel.guild;
+		
 		this.channel = channel;
-		this.member = new GuildMember(client, d.member, this.guild);
+		
+		if(channel instanceof TextChannel) {
+			this.guild = channel.guild;
+			this.member = new GuildMember(client, d.member, this.guild);
+		}
 
 		this.client = client;
 		this.handler = handler;
@@ -155,8 +159,8 @@ export class Interaction implements IInteraction {
 						||	await this.client.channels.fetch(option.value)
 					break;
 				case 'ROLE':
-					option.value = this.guild.roles.cache.get(option.value)
-						||	await this.guild.roles.fetch(option.value)
+					option.value = this.guild?.roles.cache.get(option.value)
+						||	await this.guild?.roles.fetch(option.value)
 					break;
 				case 'USER':
 					option.value = this.client.users.cache.get(option.value)
@@ -264,15 +268,15 @@ export interface IInteraction {
 	/**
 	 * The guild this command has been executed in.
 	 */
-	guild: Guild
+	guild?: Guild
 	/**
 	 * The channel this command has been executed in.
 	 */
-	channel: TextChannel
+	channel: TextChannel | DMChannel
 	/**
 	 * The command handler this interaction uses.
 	 */
-	member: GuildMember
+	member?: GuildMember
 }
 
 

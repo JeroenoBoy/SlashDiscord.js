@@ -1,4 +1,4 @@
-import { Client, Guild, TextChannel } from "discord.js";
+import { Client, DMChannel, Guild, TextChannel } from "discord.js";
 import fetch, { Response } from 'node-fetch';
 import { SlashCommand, ApplicationCommand, Interaction, InteractionResponse, InteractionOption } from ".";
 import ResponseError from "./errors/ResponseError";
@@ -361,7 +361,7 @@ export class SlashCommandHandler {
 
 				//	Checking twice
 
-				if(!(channel instanceof TextChannel)) throw new Error('Channel isn\'t a TextChannel');
+				if(!(channel instanceof TextChannel || channel instanceof DMChannel)) throw new Error('Channel isn\'t a TextChannel');
 				if(!channel) throw new Error('Channel couldn\'t be resolved in INTERACTION_CREATE');
 
 				//	Making interaction
@@ -370,8 +370,11 @@ export class SlashCommandHandler {
 
 				//	Getting commands
 
-				const command = this.guilds.get(interaction.guild.id)?.getID(interaction.data.id)
-					||	this.getById(interaction.data.id);
+				let command;
+				if(interaction.guild) {
+					command = this.guilds.get(interaction.guild.id)?.getID(interaction.data.id)
+				}
+				if(!command) command = this.getById(interaction.data.id);
 				
 				if(!command) {
 					if(this.sendNoLongerAvailable)
